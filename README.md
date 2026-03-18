@@ -130,7 +130,7 @@ Client runs on `http://localhost:5173`
 **Backend:**
 - Node.js + Express
 - MongoDB + Mongoose
-- JWT authentication
+- Clerk authentication
 - Socket.io for live sync
 
 **Project Structure:**
@@ -257,4 +257,4 @@ MIT License - feel free to use this project!
 
 ---
 
-**Happy Splitting! 🎉**
+**Happy Splitting! **
