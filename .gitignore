@@ -1,0 +1,57 @@
+# Node modules
+node_modules/
+client/node_modules
+server/node_modules/
+
+# Environment variables
+.env
+
+# Build outputs
+dist/
+build/
+
+# Vite cache
+.vite/
+
+# Test coverage
+coverage/
+
+# OS files
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Cache files
+.cache/
+.eslintcache
+.stylelintcache
+
+# Database files (if using local DB)
+*.sqlite
+*.sqlite3
+data/
+
+# Uploads
+uploads/
+public/uploads/
+
+# Temporary files
+tmp/
+temp/
+
+# Misc
+*.pem
+*.key
+.pid
+.pid.lock
