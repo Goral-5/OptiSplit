@@ -181,6 +181,13 @@ export const getSettlementData = async (req, res, next) => {
       // calc balances
       const balanceData = await calculateGroupBalances(id, req.userId.toString());
       
+      // Get settlement history for this group
+      const settlements = await Settlement.find({ groupId: id })
+        .populate('paidByUserId', '_id name email imageUrl')
+        .populate('receivedByUserId', '_id name email imageUrl')
+        .sort({ date: -1 })
+        .lean();
+      
       res.status(200).json({
         success: true,
         data: {
@@ -191,6 +198,7 @@ export const getSettlementData = async (req, res, next) => {
             description: group.description,
           },
           balances: balanceData.members,
+          settlements: settlements,
         },
       });
     } else {

@@ -1,9 +1,13 @@
 import React from 'react';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/Avatar';
 
 export function GroupBalances({ balances, currentUserId }) {
-  if (!balances || Object.keys(balances).length === 0) {
+  console.log('GroupBalances received:', { balances, currentUserId });
+  
+  // Handle array format (from balance.service.js)
+  if (!balances || !Array.isArray(balances) || balances.length === 0) {
     return (
       <Card>
         <CardContent className="py-8">
@@ -13,8 +17,9 @@ export function GroupBalances({ balances, currentUserId }) {
     );
   }
 
-  // Calculate total balance for current user
-  const totalBalance = Object.values(balances).reduce((sum, bal) => sum + bal.balance, 0);
+  // Find current user's balance
+  const currentUserBalance = balances.find(b => b.id === currentUserId);
+  const totalBalance = currentUserBalance?.totalBalance || 0;
 
   return (
     <div className="space-y-4">
@@ -26,7 +31,7 @@ export function GroupBalances({ balances, currentUserId }) {
             <p className={`text-3xl font-bold ${
               totalBalance > 0 ? 'text-green-600' : totalBalance < 0 ? 'text-red-600' : 'text-gray-900'
             }`}>
-              ₹{totalBalance.toFixed(2)}
+              ₹{Math.abs(totalBalance).toFixed(2)}
             </p>
             {totalBalance > 0 && (
               <Badge variant="secondary" className="mt-2 bg-green-100 text-green-800">
@@ -50,31 +55,41 @@ export function GroupBalances({ balances, currentUserId }) {
       {/* Individual Balances */}
       <div className="space-y-2">
         <h3 className="font-semibold text-gray-700 mb-3">Balances with Members</h3>
-        {Object.entries(balances).map(([userId, data]) => {
-          const isPositive = data.balance > 0;
-          const isZero = data.balance === 0;
+        {balances.map((member) => {
+          if (member.id === currentUserId) return null; // Skip self
+          
+          const isPositive = member.totalBalance > 0;
+          const isZero = Math.abs(member.totalBalance) < 0.01;
 
           return (
-            <Card key={userId} className="transition-all hover:shadow-sm">
+            <Card key={member.id} className="transition-all hover:shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{data.userName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {isPositive 
-                        ? `${data.userName} owes you` 
-                        : isZero 
-                          ? 'Settled up'
-                          : `You owe ${data.userName}`
-                      }
-                    </p>
+                  <div className="flex items-center gap-3 flex-1">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={member.imageUrl} />
+                      <AvatarFallback>
+                        {member.name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <p className="font-medium">{member.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isPositive 
+                          ? `${member.name} owes you` 
+                          : isZero 
+                            ? 'Settled up'
+                            : `You owe ${member.name}`
+                        }
+                      </p>
+                    </div>
                   </div>
                   
                   <div className="text-right">
                     <p className={`text-lg font-semibold ${
                       isPositive ? 'text-green-600' : isZero ? 'text-gray-500' : 'text-red-600'
                     }`}>
-                      {isZero ? '₹0.00' : `₹${Math.abs(data.balance).toFixed(2)}`}
+                      {isZero ? '₹0.00' : `₹${Math.abs(member.totalBalance).toFixed(2)}`}
                     </p>
                     {!isZero && (
                       <Badge 

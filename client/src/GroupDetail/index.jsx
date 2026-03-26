@@ -106,12 +106,13 @@ export default function GroupDetail() {
 
   const group = groupData.data.group;
   const expenses = groupData.data.expenses || [];
-  const balances = groupData.data.balances || {};
+  // Balances is now an array from the backend
+  const balances = groupData.data.balances || [];
   // Members come from the separate 'members' field, not from group object
   const members = groupData.data.members || [];
   
   console.log('Extracted members:', members);
-  console.log('First member userId object:', members[0]?.userId);
+  console.log('Balances array:', balances);
 
   // Build users map for expense list
   const usersMap = {};
@@ -126,8 +127,9 @@ export default function GroupDetail() {
     }
   });
 
-  // Calculate total balance
-  const totalBalance = Object.values(balances).reduce((sum, bal) => sum + bal.balance, 0);
+  // Calculate total balance from balances array
+  const currentUserBalance = balances.find(b => b.id === usersMap._id);
+  const totalBalance = currentUserBalance?.totalBalance || 0;
 
   return (
     <div className="space-y-6">
@@ -151,7 +153,7 @@ export default function GroupDetail() {
           <Link to="/app/groups">
             <Button variant="ghost">Back to Groups</Button>
           </Link>
-          <Link to={`/settlements/group/${id}`}>
+          <Link to={`/app/settlements/group/${id}`}>
             <Button variant="secondary">Settle Up</Button>
           </Link>
           <Link to="/app/expenses/new">
@@ -224,6 +226,7 @@ export default function GroupDetail() {
               expenses={expenses}
               users={usersMap}
               showDelete={false}
+              groupId={id}
               emptyMessage="No expenses in this group yet"
             />
           ) : (

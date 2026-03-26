@@ -257,7 +257,17 @@ function App() {
             <Route path="groups/:id" element={<GroupDetail />} />
             <Route path="expenses/new" element={<NewExpense />} />
             <Route path="person/:id" element={<PersonDetail />} />
-            <Route path="settlements/:type/:id" element={<Settlement />} />
+            <Route 
+              path="settlements/:type/:id" 
+              element={
+                <ErrorBoundary>
+                  <>
+                    {console.log('Rendering Settlement route with params:', window.location.pathname)}
+                    <Settlement />
+                  </>
+                </ErrorBoundary>
+              } 
+            />
             <Route path="personal" element={<PersonalExpenses />} />
             <Route path="analytics" element={<Analytics />} />
           </Route>

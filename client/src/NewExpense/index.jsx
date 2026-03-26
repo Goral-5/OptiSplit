@@ -96,15 +96,10 @@ export default function NewExpense() {
 
   // Clear split-specific inputs when type changes
   useEffect(() => {
-    if (members.length > 0) {
-      setSplits(members.map(m => ({ userId: m._id })));
-      
-      // Reset type-specific inputs
-      setPercentages({});
-      setExactAmounts({});
-      setShares({});
-    }
-  }, [splitType, members]);
+    setPercentages({});
+    setExactAmounts({});
+    setShares({});
+  }, [splitType]);
 
   // Keep single payer amount in sync with total
   useEffect(() => {
@@ -114,6 +109,13 @@ export default function NewExpense() {
       ]);
     }
   }, [amount]);
+
+  // Initialize splits when members change
+  useEffect(() => {
+    if (members.length > 0) {
+      setSplits(members.map(m => ({ userId: m._id })));
+    }
+  }, [members]);
 
   // Create expense mutation
   const createExpenseMutation = useMutation(
@@ -282,6 +284,12 @@ export default function NewExpense() {
           showToast.error('Total shares must be greater than 0');
           return;
         }
+        // Auto-fill missing shares with 1
+        splits.forEach(s => {
+          if (!shares[s.userId] || shares[s.userId] === 0) {
+            setShares(prev => ({ ...prev, [s.userId]: 1 }));
+          }
+        });
       }
     }
 
@@ -494,33 +502,66 @@ export default function NewExpense() {
           </Card>
         )}
 
-        {/* How should we split this? */}
+        {/* How should we split this expense? */}
         {expenseType === 'group' && members.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="text-gray-900">Split Type</CardTitle>
             </CardHeader>
             <CardContent>
-              <RadioGroup value={splitType} onValueChange={setSplitType}>
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="equal" id="equal" />
-                    <Label htmlFor="equal">Equal</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="percentage" id="percentage" />
-                    <Label htmlFor="percentage">Percentage</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="exact" id="exact" />
-                    <Label htmlFor="exact">Exact</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="shares" id="shares" />
-                    <Label htmlFor="shares">Shares</Label>
-                  </div>
-                </div>
-              </RadioGroup>
+              <div className="grid grid-cols-4 gap-4">
+                {/* Equal Split */}
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="splitType"
+                    value="equal"
+                    checked={splitType === 'equal'}
+                    onChange={(e) => setSplitType(e.target.value)}
+                    className="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Equal</span>
+                </label>
+
+                {/* Percentage Split */}
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="splitType"
+                    value="percentage"
+                    checked={splitType === 'percentage'}
+                    onChange={(e) => setSplitType(e.target.value)}
+                    className="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Percentage</span>
+                </label>
+
+                {/* Exact Split */}
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="splitType"
+                    value="exact"
+                    checked={splitType === 'exact'}
+                    onChange={(e) => setSplitType(e.target.value)}
+                    className="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Exact</span>
+                </label>
+
+                {/* Shares Split */}
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="splitType"
+                    value="shares"
+                    checked={splitType === 'shares'}
+                    onChange={(e) => setSplitType(e.target.value)}
+                    className="h-4 w-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Shares</span>
+                </label>
+              </div>
             </CardContent>
           </Card>
         )}
