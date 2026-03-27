@@ -12,7 +12,6 @@ build/
 
 # Vite cache
 .vite/
-
 # Test coverage
 coverage/
 

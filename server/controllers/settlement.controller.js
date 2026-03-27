@@ -1,3 +1,12 @@
+import mongoose from 'mongoose';
+import { ApiError } from '../middleware/errorHandler.js';
+import Settlement from '../models/Settlement.js';
+import Group from '../models/Group.js';
+import User from '../models/User.js';
+import Expense from '../models/Expense.js';
+import { calculateBilateralBalance, calculateGroupBalances } from '../services/balance.service.js';
+import { optimizeBilateralSettlement, optimizeGroupSettlements } from '../services/debt-optimization.service.js';
+
 // Create settlement
 export const createSettlement = async (req, res, next) => {
   const session = await mongoose.startSession();

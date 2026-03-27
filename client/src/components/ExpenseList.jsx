@@ -143,6 +143,29 @@ export function ExpenseList({
               </button>
             </div>
 
+            {/* Split Type & Payment Info */}
+            <div className="mb-4 grid grid-cols-2 gap-3">
+              {selectedExpense.splitType && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-700 mb-1">SPLIT TYPE</p>
+                  <p className="text-sm font-medium text-blue-900 capitalize">{selectedExpense.splitType}</p>
+                </div>
+              )}
+              <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                <p className="text-xs font-semibold text-green-700 mb-1">PAID BY</p>
+                <div className="space-y-1">
+                  {selectedExpense.paidBy?.map((payer, i) => {
+                    const payerName = users[payer.userId?._id || payer.userId]?.name || 'User';
+                    return (
+                      <p key={i} className="text-sm font-medium text-green-900">
+                        {payerName}: ₹{payer.amount.toFixed(2)}
+                      </p>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
             {/* Net Summary */}
             <div className="mb-4 p-3 bg-gray-50 rounded-lg">
               <p className="text-xs font-semibold text-gray-600 mb-2">NET BALANCE</p>

@@ -306,11 +306,11 @@ export default function Dashboard() {
             <Card className="border border-gray-200">
               <CardContent className="p-0">
                 <ExpenseList
-                  expenses={expensesData.data.slice(0, 5)}
+                  expenses={expensesData.data.slice(0, 4)}
                   users={usersMap}
                   showDelete={false}
                 />
-                {expensesData.data.length > 5 && (
+                {expensesData.data.length > 4 && (
                   <div className="border-t border-gray-100 p-4 bg-gray-50">
                     <Link to="/app/expenses/new">
                       <Button variant="secondary" className="w-full">
