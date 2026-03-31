@@ -17,11 +17,13 @@ export default function Settlement() {
   const queryClient = useQueryClient();
   const [customAmount, setCustomAmount] = useState('');
   const [note, setNote] = useState('');
-  const [paymentHistory, setPaymentHistory] = useState([]);
   const [partialAmount, setPartialAmount] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [selectedDebt, setSelectedDebt] = useState(null);
+
+  // Determine if this is a group settlement (needed for hooks below)
+  const isGroup = type === 'group';
 
   // Fetch settlement data
   const { data: settlementData, isLoading, error, refetch } = useQuery(
@@ -43,25 +45,16 @@ export default function Settlement() {
     const getCurrentUser = async () => {
       if (window.Clerk?.user) {
         setCurrentUserId(window.Clerk.user.id);
+        console.log('✅ Set currentUserId from window.Clerk:', window.Clerk.user.id);
       } else if (window.getUserId) {
         setCurrentUserId(window.getUserId());
+        console.log('✅ Set currentUserId from window.getUserId:', window.getUserId());
+      } else {
+        console.warn('⚠️ Clerk user not found, trying fallback methods...');
       }
     };
     getCurrentUser();
   }, []);
-
-  // Load payment history from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(`paymentHistory_${id}`);
-    if (stored) {
-      setPaymentHistory(JSON.parse(stored));
-    }
-  }, [id]);
-
-  // Save payment history to localStorage
-  useEffect(() => {
-    localStorage.setItem(`paymentHistory_${id}`, JSON.stringify(paymentHistory));
-  }, [paymentHistory, id]);
 
   // Create settlement mutation
   const createSettlementMutation = useMutation(
@@ -108,6 +101,48 @@ export default function Settlement() {
     }
   );
 
+  // Generate optimized transactions from balances (SOURCE OF TRUTH)
+  const generateTransactions = (balances) => {
+    let creditors = [];
+    let debtors = [];
+
+    balances.forEach(b => {
+      if (b.totalBalance > 0.01) creditors.push({ ...b });
+      if (b.totalBalance < -0.01) debtors.push({ ...b });
+    });
+
+    creditors.sort((a,b) => b.totalBalance - a.totalBalance);
+    debtors.sort((a,b) => a.totalBalance - b.totalBalance);
+
+    let i = 0, j = 0;
+    let transactions = [];
+
+    while (i < creditors.length && j < debtors.length) {
+      let credit = creditors[i];
+      let debt = debtors[j];
+
+      let settleAmount = Math.min(
+        credit.totalBalance,
+        Math.abs(debt.totalBalance)
+      );
+
+      transactions.push({
+        from: { _id: debt.id, name: debt.name, imageUrl: debt.imageUrl },
+        to: { _id: credit.id, name: credit.name, imageUrl: credit.imageUrl },
+        amount: Number(settleAmount.toFixed(2)),
+        _id: `${debt.id}-${credit.id}`
+      });
+
+      credit.totalBalance -= settleAmount;
+      debt.totalBalance += settleAmount;
+
+      if (Math.abs(credit.totalBalance) < 0.01) i++;
+      if (Math.abs(debt.totalBalance) < 0.01) j++;
+    }
+
+    return transactions;
+  };
+
   // Get optimized settlements for groups
   const { data: optimizedData } = useQuery(
     ['optimizedSettlements', type, id],
@@ -121,25 +156,42 @@ export default function Settlement() {
     }
   );
 
-  const handleSettle = (tx, amountPaid) => {
-    // Add entry to payment history
-    const entry = {
-      id: Date.now(),
-      from: tx.from,
-      to: tx.to,
-      amount: amountPaid,
-      date: new Date().toISOString()
-    };
+  // Handle settlement with backend integration
+  const handleSettle = async (tx, enteredAmount) => {
+    const amount = enteredAmount || tx.amount;
 
-    setPaymentHistory(prev => [entry, ...prev]);
-    
-    // Show success animation
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 2000);
+    if (amount <= 0 || amount > tx.amount) {
+      showToast.error("Invalid amount");
+      return;
+    }
+
+    try {
+      // Call backend settlement API
+      await api.post('/settlements', {
+        groupId: id,
+        paidByUserId: tx.from._id,
+        receivedByUserId: tx.to._id,
+        amount: amount,
+        note: `Payment: ${tx.from.name} → ${tx.to.name}`
+      });
+
+      // Show success animation
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+
+      // REFETCH: Mandatory to get fresh data from backend
+      await refetch();
+      
+    } catch (error) {
+      console.error('Settlement error:', error);
+      showToast.error(error.response?.data?.message || 'Failed to record settlement');
+    }
   };
 
-  const handleSubmit = (e, tx = null) => {
+  const handleSubmit = async (e, tx = null) => {
     e?.preventDefault();
+    
+    console.log('📝 Submitting settlement form...', { customAmount, selectedDebt, isGroup });
     
     if (!customAmount || parseFloat(customAmount) <= 0) {
       showToast.error('Valid amount is required');
@@ -148,71 +200,69 @@ export default function Settlement() {
 
     const amountToPay = parseFloat(customAmount);
     
-    // If settling a specific transaction (from optimized plan)
-    if (tx) {
-      handleSettle(tx, amountToPay);
-      
-      // Submit to backend
-      createSettlementMutation.mutate({
-        amount: amountToPay,
-        note: note.trim() || `Payment: ${tx.from.name} → ${tx.to.name}`,
-        paidByUserId: tx.from._id,
-        receivedByUserId: tx.to._id,
-        groupId: id,
-      });
-      
-      // Clear partial amount input
-      setPartialAmount(prev => {
-        const newState = { ...prev };
-        delete newState[tx._id];
-        return newState;
-      });
-    } else {
-      // Determine which debt to settle
-      let debtToSettle = selectedDebt;
-      
-      // If no specific debt selected, find first debt involving current user
-      if (!debtToSettle && isGroup && debtsList.length > 0) {
-        debtToSettle = debtsList.find(
-          debt => debt.from.id === currentUserId
-        );
-      }
-      
-      if (debtToSettle) {
-        // Settle specific debt
-        const tempTx = {
-          _id: debtToSettle.id,
-          from: { _id: debtToSettle.from.id, name: debtToSettle.from.name, imageUrl: debtToSettle.from.imageUrl },
-          to: { _id: debtToSettle.to.id, name: debtToSettle.to.name, imageUrl: debtToSettle.to.imageUrl }
-        };
-        
-        handleSettle(tempTx, amountToPay);
-        createSettlementMutation.mutate({
-          amount: amountToPay,
-          note: note.trim(),
-          paidByUserId: debtToSettle.from.id,
-          receivedByUserId: debtToSettle.to.id,
-          groupId: id,
-        });
-        
-        // Clear selection after submission
-        setSelectedDebt(null);
-      } else if (!isGroup) {
-        // Person-to-person settlement
-        createSettlementMutation.mutate({
-          amount: amountToPay,
-          note: note.trim(),
-          paidByUserId: currentUserId,
-          receivedByUserId: id,
-        });
+    try {
+      // If settling a specific transaction (from optimized plan)
+      if (tx) {
+        console.log('✅ Settling optimized transaction:', tx);
+        await handleSettle(tx, amountToPay);
       } else {
-        showToast.error('No debt selected. Please click "Settle" on a debt above.');
-        return;
+        // Determine which debt to settle
+        let debtToSettle = selectedDebt;
+        
+        console.log('🔍 Looking for debt to settle...', { selectedDebt, debtsCount: debtsList.length });
+        
+        // If no specific debt selected, find first debt involving current user
+        if (!debtToSettle && isGroup && debtsList.length > 0) {
+          debtToSettle = debtsList.find(
+            debt => debt.from.id === currentUserId
+          );
+          console.log('🎯 Auto-selected debt:', debtToSettle);
+        }
+        
+        if (debtToSettle) {
+          // Settle specific debt
+          const tempTx = {
+            _id: debtToSettle.id,
+            from: { _id: debtToSettle.from.id, name: debtToSettle.from.name, imageUrl: debtToSettle.from.imageUrl },
+            to: { _id: debtToSettle.to.id, name: debtToSettle.to.name, imageUrl: debtToSettle.to.imageUrl }
+          };
+          
+          console.log('💰 Settling debt:', tempTx, 'Amount:', amountToPay);
+          await handleSettle(tempTx, amountToPay);
+        } else if (!isGroup) {
+          // Person-to-person settlement
+          console.log('👤 Person-to-person settlement');
+          await api.post('/settlements', {
+            amount: amountToPay,
+            note: note.trim(),
+            paidByUserId: currentUserId,
+            receivedByUserId: id,
+          });
+          
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 2000);
+          await refetch();
+        } else {
+          console.error('❌ No debt found to settle');
+          showToast.error('No debt selected. Please click "Settle" on a debt above.');
+          return;
+        }
       }
+      
+      console.log('✅ Settlement successful!');
+      
+      // Reset form
+      setCustomAmount('');
+      setNote('');
+      setSelectedDebt(null);
+      
+    } catch (error) {
+      console.error('❌ Settlement error:', error);
+      showToast.error(error.response?.data?.message || 'Failed to record settlement');
     }
   };
 
-  const handlePartialPay = (tx) => {
+  const handlePartialPay = async (tx) => {
     const entered = partialAmount[tx._id] || tx.amount;
 
     if (entered <= 0 || entered > tx.amount) {
@@ -220,7 +270,7 @@ export default function Settlement() {
       return;
     }
 
-    handleSettle(tx, entered);
+    await handleSettle(tx, entered);
     
     // Clear partial amount input
     setPartialAmount(prev => {
@@ -231,13 +281,15 @@ export default function Settlement() {
   };
 
   const data = settlementData?.data || {};
-  const isGroup = type === 'group';
   const balances = data.balances || [];
   const settlements = data.settlements || [];
   const balance = !isGroup ? (data.balance || 0) : null;
   const payer = data.payer;
   const receiver = data.receiver;
   const optimized = optimizedData?.data || [];
+
+  // Generate transactions from balances NOW that balances is defined
+  const optimizedTransactions = isGroup ? generateTransactions(balances) : [];
 
   // Inline styles for animations
   const styles = {
@@ -260,7 +312,7 @@ export default function Settlement() {
     }
   };
 
-  // Build debt list for group settlement
+  // Build debt list for group settlement (from balances - SOURCE OF TRUTH)
   const debtsList = [];
   if (isGroup) {
     balances.forEach(member => {
@@ -278,6 +330,9 @@ export default function Settlement() {
       }
     });
   }
+
+  // Use generated transactions instead of backend optimization
+  const displayTransactions = optimizedTransactions.length > 0 ? optimizedTransactions : debtsList;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -444,8 +499,8 @@ export default function Settlement() {
             </>
           )}
 
-          {/* Optimized Settlements */}
-          {type === 'group' && optimized.length > 0 && (
+          {/* Optimized Settlements - Use generated transactions (SOURCE OF TRUTH) */}
+          {type === 'group' && displayTransactions.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -455,7 +510,7 @@ export default function Settlement() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {optimized.map((transaction, idx) => {
+                  {displayTransactions.map((transaction, idx) => {
                     const isPayer = currentUserId && transaction.from._id === currentUserId;
                     const isReceiver = currentUserId && transaction.to._id === currentUserId;
                     const enteredAmount = partialAmount[transaction._id] || '';
@@ -544,64 +599,7 @@ export default function Settlement() {
             </Card>
           )}
 
-          {/* Payment History */}
-          {paymentHistory.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600" />
-                  Payment History
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {paymentHistory.map((payment) => (
-                    <div 
-                      key={payment.id} 
-                      className="p-3 border border-gray-200 rounded-lg bg-gray-50 hover:bg-white hover:shadow-md transition-all"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-3">
-                          <div className="flex -space-x-2">
-                            <Avatar className="h-7 w-7 border-2 border-white">
-                              <AvatarImage src={payment.from.imageUrl} />
-                              <AvatarFallback className="text-xs">
-                                {payment.from.name?.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <Avatar className="h-7 w-7 border-2 border-white">
-                              <AvatarImage src={payment.to.imageUrl} />
-                              <AvatarFallback className="text-xs">
-                                {payment.to.name?.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {payment.from.name} → {payment.to.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(payment.date).toLocaleString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                        <Badge variant="default" className="font-bold bg-green-600">
-                          ₹{payment.amount.toFixed(2)}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Settlement History */}
+          {/* Settlement History (from backend - REAL DATA) */}
           {settlements && settlements.length > 0 && (
             <Card>
               <CardHeader>
@@ -657,6 +655,11 @@ export default function Settlement() {
           <Card>
             <CardHeader>
               <CardTitle>Record Payment</CardTitle>
+              {selectedDebt && (
+                <p className="text-sm text-green-600 mt-2">
+                  ✅ Selected: {selectedDebt.description} - ₹{selectedDebt.amount.toFixed(2)}
+                </p>
+              )}
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">

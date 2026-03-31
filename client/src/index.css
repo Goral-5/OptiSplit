@@ -101,3 +101,287 @@
 .divider-angle-inverse {
   clip-path: polygon(0 15%, 100% 0, 100% 100%, 0 100%);
 }
+
+/* ===================================
+   MOBILE RESPONSIVE FIXES (< 350px)
+   Original design preserved for 350px+
+   =================================== */
+
+/* Safe global box-sizing */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Mobile-only styles - activated ONLY below 350px */
+@media (max-width: 349px) {
+  
+  /* 🚫 Prevent horizontal scroll on mobile */
+  html,
+  body {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  /* 📦 Fix container overflow */
+  .container,
+  .card,
+  .modal,
+  [class*="card-"] {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+  }
+
+  /* 🔴 HEADER FIX - Stack elements vertically */
+  .group-header,
+  [class*="header"] {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .group-header-actions,
+  [class*="header-actions"] {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  /* 🔴 FIX ROW OVERFLOW - Stack columns */
+  .row,
+  [class*="row-"] {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* 🔴 FIX CARD LAYOUT - Vertical stacking */
+  .card-row,
+  [class*="card-row"],
+  .flex-row {
+    flex-direction: column !important;
+  }
+
+  /* 🔴 SETTLEMENT FIX - Better mobile layout */
+  .settlement-row,
+  [class*="settlement"] {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .settlement-top {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .settlement-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .settlement-actions button {
+    width: 100%;
+  }
+
+  /* 🔴 TEXT WRAP FIX - Prevent overflow */
+  .text,
+  p,
+  span,
+  div,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+  }
+
+  /* 🔴 BUTTON FIX - Full width on mobile */
+  button,
+  [class*="btn"],
+  a.button {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  /* 🔴 FORM FIXES */
+  input,
+  textarea,
+  select {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  /* 🔴 BADGE & AVATAR FIX */
+  .badge,
+  [class*="badge"],
+  .avatar {
+    flex-shrink: 0;
+  }
+
+  /* 🔴 GRID TO FLEX */
+  .grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* 🔴 PADDING REDUCTION FOR CARDS */
+  .card,
+  [class*="card"] {
+    padding: 0.75rem;
+  }
+
+  /* 🔴 MODAL FIX */
+  .modal-content,
+  [class*="modal"] {
+    margin: 0.5rem;
+    max-width: calc(100vw - 1rem);
+  }
+
+  /* 🔴 NAVIGATION FIX */
+  nav,
+  .nav-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 🔴 TABLE FIX - Scroll horizontally */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 🔴 SPACING ADJUSTMENTS */
+  .p-4,
+  [class*="p-"] {
+    padding: 0.5rem;
+  }
+
+  .m-4,
+  [class*="m-"] {
+    margin: 0.5rem;
+  }
+
+  /* 🔴 FONT SIZE ADJUSTMENTS */
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1.125rem; }
+  
+  /* 🔴 UTILITY CLASSES */
+  .hidden-mobile {
+    display: none !important;
+  }
+  
+  .show-mobile {
+    display: block !important;
+  }
+  
+  /* 🔴 SPECIFIC COMPONENT FIXES */
+  
+  /* Dashboard Layout */
+  .dashboard-layout {
+    padding: 0.5rem;
+  }
+  
+  /* Header & Navigation */
+  header,
+  .app-header {
+    position: relative !important;
+    width: 100%;
+  }
+  
+  /* Card Content Overflow */
+  .card-content,
+  [class*="CardContent"] {
+    overflow-x: visible;
+  }
+  
+  /* Flex containers with potential overflow */
+  .flex,
+  [class*="flex"] {
+    flex-wrap: wrap;
+  }
+  
+  /* Avatar groups */
+  .avatar-group,
+  [class*="avatar-group"] {
+    justify-content: flex-start;
+  }
+  
+  /* Badge containers */
+  .badge-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  
+  /* Action buttons row */
+  .actions-row,
+  .button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+  }
+  
+  /* Text truncation fix */
+  .truncate,
+  [class*="truncate"] {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  
+  /* Icon alignment */
+  .icon,
+  svg,
+  i {
+    flex-shrink: 0;
+    min-width: 16px;
+  }
+  
+  /* List items */
+  li,
+  [class*="list-item"] {
+    word-break: break-word;
+  }
+  
+  /* Form labels */
+  label,
+  [class*="label"] {
+    display: block;
+    width: 100%;
+  }
+  
+  /* Input groups */
+  .input-group,
+  [class*="input-group"] {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  /* Dropdown menus */
+  .dropdown-menu,
+  [class*="dropdown"] {
+    max-width: calc(100vw - 2rem);
+  }
+  
+  /* Tooltip positioning */
+  .tooltip,
+  [class*="tooltip"] {
+    max-width: 280px;
+    word-wrap: break-word;
+  }
+}

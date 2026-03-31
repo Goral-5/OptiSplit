@@ -34,12 +34,4 @@ const balanceSchema = new mongoose.Schema({
 balanceSchema.index({ groupId: 1, user: 1, owesTo: 1 });
 balanceSchema.index({ user: 1, owesTo: 1 });
 
-// prevent negative balances
-balanceSchema.pre('save', function(next) {
-  if (this.amount < 0) {
-    this.amount = 0;
-  }
-  next();
-});
-
 export default mongoose.model("Balance", balanceSchema);

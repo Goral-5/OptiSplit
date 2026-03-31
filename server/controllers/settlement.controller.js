@@ -4,6 +4,7 @@ import Settlement from '../models/Settlement.js';
 import Group from '../models/Group.js';
 import User from '../models/User.js';
 import Expense from '../models/Expense.js';
+import Balance from '../models/Balance.js';
 import { calculateBilateralBalance, calculateGroupBalances } from '../services/balance.service.js';
 import { optimizeBilateralSettlement, optimizeGroupSettlements } from '../services/debt-optimization.service.js';
 
@@ -80,23 +81,41 @@ export const createSettlement = async (req, res, next) => {
     
     const settlement = await Settlement.create([settlementData], { session });
     
-    // reduce debt in Balance model
+    // CRITICAL: Update balance in DB based on optimized transaction
     if (groupId) {
-      // group settlement: reduce balance between these two users
-      await Balance.findOneAndUpdate(
+      const settlementAmount = parseFloat(amount);
+      
+      // Update the balance: reduce debt from payer to receiver
+      // This modifies the Balance document where user=paidByUserId and owesTo=receivedByUserId
+      const balanceUpdate = await Balance.findOneAndUpdate(
         {
           groupId,
           user: paidByUserId,
-          owesTo: receivedByUserId
+          owesTo: receivedByUserId,
+          amount: { $gt: 0 } // Only update if balance exists
         },
         {
-          $inc: { amount: -parseFloat(amount) }
+          $inc: { amount: -settlementAmount }
         },
         {
           upsert: false,
           session
         }
       );
+      
+      // If no balance was found/updated, it means the optimized transaction
+      // doesn't directly match stored balances. This can happen with complex optimizations.
+      // In this case, we still record the settlement but don't fail.
+      if (!balanceUpdate) {
+        console.log(`No direct balance found for ${paidByUserId} → ${receivedByUserId}. Settlement recorded anyway.`);
+      }
+      
+      // Cleanup zero/negative balances (within tolerance)
+      // After decrementing, amounts might go negative or to zero
+      await Balance.deleteMany({
+        groupId,
+        amount: { $gte: -0.01, $lte: 0.01 }
+      }, { session });
     }
     
     // mark expenses as paid if this settlement covers them
