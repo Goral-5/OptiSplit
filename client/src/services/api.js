@@ -1,14 +1,34 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Get API base URL from environment or default to localhost
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+// Log configuration for debugging (remove in production if needed)
+if (import.meta.env.DEV) {
+  console.log('🔧 API Configuration:');
+  console.log('  - Base URL:', API_BASE_URL);
+  console.log('  - Environment:', import.meta.env.MODE);
+}
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Enable cookies for auth
 });
+
+// Add request interceptor for debugging (development only)
+if (import.meta.env.DEV) {
+  api.interceptors.request.use(
+    (config) => {
+      console.log(`📡 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+}
 
 // Token refresh flag to prevent multiple simultaneous requests
 let isRefreshing = false;
@@ -83,6 +103,21 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Enhanced 404 error messaging
+    if (error.response?.status === 404) {
+      console.error('❌ 404 Error - Backend endpoint not found:');
+      console.error('  URL:', error.config?.url);
+      console.error('  Base URL:', API_BASE_URL);
+      console.error('  Full URL:', error.config?.baseURL + error.config?.url);
+      
+      // Check if it's a common mistake
+      if (!API_BASE_URL.includes('onrender.com') && !API_BASE_URL.includes('localhost')) {
+        console.warn('⚠️  Warning: Your VITE_API_URL might be incorrect!');
+        console.warn('   Expected: https://your-app.onrender.com/api');
+        console.warn(`   Found: ${API_BASE_URL}`);
+      }
+    }
+
     const originalRequest = error.config;
 
     // If error is 401 and we haven't retried yet
