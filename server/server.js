@@ -153,7 +153,7 @@ const server = http.createServer(app);
 // ================= SOCKET.IO =================
 const io = new Server(server, {
   cors: {
-    origin: ["https://opti-split.vercel.app"],
+    origin: process.env.CLIENT_URL?.split(',') || ["http://localhost:5173", "https://opti-split.vercel.app"],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -166,8 +166,21 @@ app.set('io', io);
 // ================= MIDDLEWARE =================
 app.use(helmet());
 
+// Allow multiple origins from environment variable
+const allowedOrigins = process.env.CLIENT_URL?.split(',') || ['http://localhost:5173', 'https://opti-split.vercel.app'];
+
 app.use(cors({
-  origin: ["https://opti-split.vercel.app"],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.includes('vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
