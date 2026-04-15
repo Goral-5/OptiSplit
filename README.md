@@ -1,260 +1,261 @@
-# 💰 OptiSplit - Smart Group Expense Splitter
+# OptiSplit – Smart Group Expense Management System
 
-A production-grade expense splitting application inspired by Splitwise. Split bills, track debts, and settle up with friends and groups.
-
-## ✨ Features
-
-- **Group Expenses** - Create groups and split expenses among members
-- **4 Split Types:**
-  - Equal split (divide equally)
-  - Percentage split (custom percentages)
-  - Exact amounts (specific amounts per person)
-  - Shares split (weighted distribution)
-- **Live Preview** - See who owes what in real-time
-- **Multiple Payers** - Support for multiple people paying
-- **Smart Balances** - Automatic creditor/debtor tracking
-- **Debt Optimization** - Minimize transactions needed
-- **Individual Expenses** - Track personal expenses separately
-- **Real-time Updates** - Socket-based synchronization
+OptiSplit is a full-stack web application designed to simplify group expense tracking and debt settlement. It enables users to split expenses, track balances, and settle debts efficiently using optimized transaction logic.
 
 ---
 
-## 🚀 Quick Start
+## Overview
 
-### Prerequisites
+Managing shared expenses in groups often leads to confusion, manual calculations, and redundant transactions. OptiSplit provides a structured system to:
 
-- Node.js v16+
-- MongoDB v4.4+
-- npm or yarn
+- Record group expenses  
+- Define split logic  
+- Track real-time balances  
+- Optimize settlements  
 
-### Installation
-
-#### 1. Clone the repository
-
-```bash
-git clone <repository-url>
-cd OptiSplit
-```
-
-#### 2. Set up environment variables
-
-**Create `optisplit/server/.env`:**
-```env
-PORT=5000
-NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/optisplit
-JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-JWT_EXPIRE=7d
-ALLOWED_ORIGINS=http://localhost:5173
-```
-
-**Create `optisplit/client/.env`:**
-```env
-VITE_API_BASE_URL=http://localhost:5000/api
-VITE_APP_NAME=OptiSplit
-```
-
-⚠️ **Note:** `.env` files are gitignored. You must create them manually.
-
-#### 3. Install dependencies
-
-**Server:**
-```bash
-cd optisplit/server
-npm install
-```
-
-**Client:**
-```bash
-cd optisplit/client
-npm install
-```
-
-#### 4. Start MongoDB
-
-Make sure MongoDB is running:
-```bash
-mongod
-```
-
-#### 5. Run the application
-
-You need TWO terminals:
-
-**Terminal 1 - Backend:**
-```bash
-cd optisplit/server
-npm start
-```
-Server runs on `http://localhost:5000`
-
-**Terminal 2 - Frontend:**
-```bash
-cd optisplit/client
-npm run dev
-```
-Client runs on `http://localhost:5173`
+The system minimizes the number of transactions required to settle all debts.
 
 ---
 
-## 📱 Usage
+## Key Features
 
-### Creating a Group Expense
+### Group Expense Management
+- Create and manage groups  
+- Add members  
+- Track shared expenses  
 
-1. Go to `/app/expenses/new`
-2. Select "Group Expense"
-3. Choose a group
-4. Enter description and amount (e.g., "Dinner", ₹100)
-5. Select who paid
-6. Choose split type (Equal, Percentage, Exact, or Shares)
-7. View live preview
-8. Click "Create Expense"
-9. Success! Form resets automatically
+### Flexible Expense Splitting
+- Equal split  
+- Percentage split  
+- Exact amount split  
+- Share-based split  
 
-### Understanding Balances
+### Multiple Payer Support
+- Supports multiple contributors in one expense  
 
-- **Green badge** = "Gets ₹X" (creditor - people owe them)
-- **Red badge** = "Owes ₹X" (debtor - they need to pay)
-- Dashboard shows your overall net balance
+### Real-Time Balance Tracking
+- Shows creditors and debtors clearly  
+- Updates automatically  
+
+### Debt Optimization
+- Minimizes number of transactions using algorithm  
+
+### Settlement System
+- Group-level settlement  
+- Expense-level settlement  
+- Payment history tracking  
+
+### Personal Expense Tracking
+- Manage individual expenses separately  
+
+### Real-Time Updates
+- Socket-based synchronization  
 
 ---
 
-## 🏗️ Architecture
+## Technology Stack
 
-**Frontend:**
-- React 18 + Vite
-- React Query for data fetching
-- Tailwind CSS + shadcn/ui
-- Socket.io for real-time updates
+### Frontend
+- React (Vite)  
+- React Query  
+- Tailwind CSS  
+- shadcn/ui  
 
-**Backend:**
-- Node.js + Express
-- MongoDB + Mongoose
-- Clerk authentication
-- Socket.io for live sync
+### Backend
+- Node.js  
+- Express.js  
+- MongoDB (Mongoose)  
+- Clerk Authentication  
+- Socket.io  
 
-**Project Structure:**
+---
+
+## Project Structure
+
 ```
 OptiSplit/
 ├── optisplit/
-│   ├── client/          # React frontend
+│   ├── client/          # Frontend
 │   │   ├── src/
-│   │   ├── .env
 │   │   └── package.json
-│   └── server/          # Node.js backend
+│   │
+│   └── server/          # Backend
 │       ├── controllers/
 │       ├── models/
 │       ├── routes/
 │       ├── services/
-│       ├── .env
+│       ├── middleware/
 │       └── package.json
+│
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## 🔧 Available Scripts
+## Installation
 
-### Server
+### Prerequisites
+- Node.js v16+  
+- MongoDB  
+- npm or yarn  
+
+---
+
+### Clone Repository
+
+```bash
+git clone <repository-url>
+cd OptiSplit
+```
+
+---
+
+### Environment Variables
+
+#### Server (.env)
+
+```env
+PORT=5000
+NODE_ENV=development
+MONGODB_URI=mongodb://localhost:27017/optisplit
+JWT_SECRET=your-secret-key
+ALLOWED_ORIGINS=http://localhost:5173
+```
+
+#### Client (.env)
+
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
+VITE_APP_NAME=OptiSplit
+```
+
+---
+
+### Install Dependencies
+
+#### Backend
 
 ```bash
 cd optisplit/server
-npm start          # Start with nodemon
-npm run prod       # Production mode
+npm install
 ```
 
-### Client
+#### Frontend
 
 ```bash
 cd optisplit/client
-npm run dev        # Development server
-npm run build      # Build for production
-npm run preview    # Preview build
+npm install
 ```
 
 ---
 
-## 🐛 Troubleshooting
+### Run Application
 
-**MongoDB connection error?**
+#### Backend
+
 ```bash
-mongod --dbpath <your-data-path>
+npm start
 ```
 
-**Port already in use?**
-Change PORT in `server/.env` or kill process using port 5000/5173
+#### Frontend
 
-**CORS error?**
-Check `ALLOWED_ORIGINS` in server `.env` includes your frontend URL
-
-**Environment variables not loading?**
-Restart server after creating `.env` file
+```bash
+npm run dev
+```
 
 ---
 
-## 🗄️ Database Schema
+## Application Flow
 
-**Main Collections:**
-- Groups - Group info and members
-- Expenses - All expense data with splits
-- Balances - Who owes whom
-- Settlements - Payment records
-
----
-
-## 🔐 Security
-
-- Clerk authentication
-- Environment variables for secrets
-- Input validation
-- CORS protection
-- MongoDB transactions for financial data
+1. User logs in  
+2. Creates or joins a group  
+3. Adds an expense  
+4. Selects split type  
+5. System calculates balances  
+6. Optimization algorithm runs  
+7. Settlement suggestions generated  
 
 ---
 
-## 📝 Environment Variables Reference
+## Debt Optimization Logic
 
-### Server (.env)
+### Formula
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| PORT | Yes | Server port (default: 5000) |
-| MONGODB_URI | Yes | MongoDB connection string |
-| JWT_SECRET | Yes | JWT signing key (change in production!) |
-| ALLOWED_ORIGINS | Yes | Comma-separated frontend URLs |
+```
+balance = paid - owes
+```
 
-### Client (.env)
+### Algorithm Steps
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| VITE_API_BASE_URL | Yes | Backend API URL |
-| VITE_APP_NAME | No | App display name |
+1. Calculate net balance for all users  
+2. Separate creditors and debtors  
+3. Sort both lists  
+4. Match highest debtor with highest creditor  
+5. Settle minimum amount  
+6. Repeat until all balances are zero  
 
----
+### Result
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/name`)
-3. Commit changes (`git commit -m 'Add feature'`)
-4. Push to branch
-5. Open Pull Request
+- Reduces redundant transactions  
+- Produces minimal settlement steps  
 
 ---
 
-## 📄 License
+## Database Design
 
-MIT License - feel free to use this project!
+### Collections
 
----
-
-## 🙏 Acknowledgments
-
-- Inspired by Splitwise
-- Built with modern React best practices
-- UI components from shadcn/ui
+- Users  
+- Groups  
+- Expenses  
+- Balances  
+- Settlements  
 
 ---
 
-**Happy Splitting! **
+## Deployment
+
+### Frontend
+- Vercel  
+
+### Backend
+- Render / Railway  
+
+---
+
+## Troubleshooting
+
+**CORS Error**  
+Check `ALLOWED_ORIGINS` matches frontend URL  
+
+**MongoDB Error**  
+Verify connection string  
+
+**Environment Variables Not Working**  
+Restart server after changes  
+
+---
+
+## Security
+
+- Clerk Authentication  
+- Environment-based configuration  
+- API validation  
+- MongoDB transactions  
+
+---
+
+## Future Scope
+
+- Payment gateway integration  
+- Partial settlements  
+- Analytics dashboard  
+- Mobile application  
+- Offline support  
+
+---
+
+## License
+
+MIT License
