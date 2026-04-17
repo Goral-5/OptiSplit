@@ -300,9 +300,3 @@ Restart server after updating `.env`
 ## 14. License
 
 This project is licensed under the MIT License.
-
----
-
-## 15. Conclusion
-
-OptiSplit demonstrates a practical implementation of modern web technologies combined with optimized financial computation. It provides a reliable and scalable solution for managing group expenses while ensuring minimal transaction overhead and improved user experience.
